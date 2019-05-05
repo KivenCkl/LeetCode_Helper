@@ -23,7 +23,7 @@ class Problems:
         self.config = Config()
         self.login = Login(self.config.username, self.config.password)
         self.__db_dir = os.path.abspath(os.path.join(__file__, "../..", "db"))
-        if not os.path.exists(self.db_path):
+        if not os.path.exists(self.__db_dir):
             os.makedirs(self.__db_dir)
         self.db_path = os.path.join(self.__db_dir, "leetcode.db")
         self.__cookies = self.login.cookies

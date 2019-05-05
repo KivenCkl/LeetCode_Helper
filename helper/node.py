@@ -31,14 +31,14 @@ class ProblemInfoNode:
         return '{:.1%}'.format(self.total_acs / (self.total_submitted + 1))
 
     def __formFavor(self, is_favor):
-        return '![](https://raw.githubusercontent.com/KivenCkl/LeetCode_Helper/master/imgs/favorites.ico)' if is_favor else ''
+        return '❤️' if is_favor else ''
 
     def __formPaid(self, paid_only):
-        return '![](https://raw.githubusercontent.com/KivenCkl/LeetCode_Helper/master/imgs/lock.ico)' if paid_only else ''
+        return '🔒' if paid_only else ''
 
     def __formArticle(self, article_live):
         slug = ARTICLE_FORMAT.format(self.title_slug)
-        return '[![](https://raw.githubusercontent.com/KivenCkl/LeetCode_Helper/master/imgs/docs.ico)]({})'.format(slug) if article_live else ''
+        return '[📝]({})'.format(slug) if article_live else ''
 
     def __formId(self, id):
         return '{:0>4d}'.format(id)
