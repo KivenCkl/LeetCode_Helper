@@ -1,7 +1,7 @@
 <!--
  * @Author: KivenChen
  * @Date: 2019-04-25
- * @LastEditTime: 2019-05-05
+ * @LastEditTime: 2019-05-06
  -->
 # LeetCode_Helper
 
@@ -31,17 +31,17 @@ Python 实现的 LeetCode 仓库美化程序。爬取 LeetCode-cn AC 的题目�
 
 运行 `python run.py`
 
-![](imgs\run.png)
+![](imgs/run.png)
 
 ## 效果
 
 具体效果以及爬取的具体数据可参看我的 repo: [LeetCode](https://github.com/KivenCkl/LeetCode)
 
-![](imgs\example_cn.png)
+![](imgs/example_cn.png)
 
-![](imgs\example_en.png)
+![](imgs/example_en.png)
 
-![](imgs\problem.png)
+![](imgs/problem.png)
 
 你可以根据你自己的需求爱好修改 `templates.py` 其中的模板
 
