@@ -1,7 +1,7 @@
 '''
 @Author: KivenChen
 @Date: 2019-04-22
-@LastEditTime: 2019-05-05
+@LastEditTime: 2019-05-23
 '''
 
 # LeetCode 相关链接
@@ -27,77 +27,77 @@ DIFFICULTY_EN = ['', 'easy', 'medium', 'hard']
 LANGS = {
     'bash': {
         'lang': 'Shell',
-        'ext': '.sh',
+        'ext': 'sh',
         'style': '#'
     },
     'c': {
         'lang': 'C',
-        'ext': '.c',
+        'ext': 'c',
         'style': '//'
     },
     'cpp': {
         'lang': 'C++',
-        'ext': '.cpp',
+        'ext': 'cpp',
         'style': '//'
     },
     'csharp': {
         'lang': 'C#',
-        'ext': '.cs',
+        'ext': 'cs',
         'style': '//'
     },
     'golang': {
         'lang': 'Go',
-        'ext': '.go',
+        'ext': 'go',
         'style': '//'
     },
     'java': {
         'lang': 'Java',
-        'ext': '.java',
+        'ext': 'java',
         'style': '//'
     },
     'javascript': {
         'lang': 'JavaScript',
-        'ext': '.js',
+        'ext': 'js',
         'style': '//'
     },
     'kotlin': {
         'lang': 'Kotlin',
-        'ext': '.kt',
+        'ext': 'kt',
         'style': '//'
     },
     'mysql': {
         'lang': 'SQL',
-        'ext': '.sql',
+        'ext': 'sql',
         'style': '--'
     },
     'python': {
         'lang': 'Python',
-        'ext': '.py',
+        'ext': 'py',
         'style': '#'
     },
     'python3': {
         'lang': 'Python',
-        'ext': '.py',
+        'ext': 'py',
         'style': '#'
     },
     'ruby': {
         'lang': 'Ruby',
-        'ext': '.rb',
+        'ext': 'rb',
         'style': '#'
     },
     'rust': {
         'lang': 'Rust',
-        'ext': '.rs',
+        'ext': 'rs',
         'style': '//'
     },
     'scala': {
         'lang': 'Scala',
-        'ext': '.scala',
+        'ext': 'scala',
         'style': '//'
     },
     'swift': {
         'lang': 'Swift',
-        'ext': '.swift',
+        'ext': 'swift',
         'style': '//'
     }
 }
