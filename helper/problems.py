@@ -169,23 +169,18 @@ class Problems:
     def __getSubmissions(self):
         result = []
         offset = 0
-        retry = 10
-        while retry:
-            try:
-                resp = requests.get(
-                    SUBMISSIONS_FORMAT.format(offset),
-                    headers=HEADERS,
-                    cookies=self.__cookies)
-                content = resp.json()
-                result.extend(content['submissions_dump'])
-                # 判断是否还有下一页
-                if not content['has_next']:
-                    return result
-                offset += 20
-            except Exception:
-                time.sleep(1)
-                retry -= 1
-        print('连接异常，请重试！')
+        while True:
+            resp = requests.get(
+                SUBMISSIONS_FORMAT.format(offset),
+                headers=HEADERS,
+                cookies=self.__cookies)
+            content = resp.json()
+            result.extend(content['submissions_dump'])
+            # 判断是否还有下一页
+            if not content['has_next']:
+                return result
+            offset += 20
+            time.sleep(1)
 
     def storeSubmissions(self):
         '''存储提交的代码信息'''

@@ -99,7 +99,7 @@ class Extractor:
                                    data['title_slug'])
         if not os.path.exists(folder_path):
             # 创建问题文件夹
-            os.makedirs(folder_path)
+            os.makedirs(folder_path, exist_ok=True)
         readme_cn_path = os.path.join(folder_path, 'README.md')
         title_cn = '[{}. {}]({})'.format(
             data['frontend_id'], data['title_cn'],

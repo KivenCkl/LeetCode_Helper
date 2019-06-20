@@ -83,9 +83,13 @@ class ProblemDescNode:
         return '\n'.join(tags_cn), '\n'.join(tags_en)
 
     def __formContentCN(self, content):
+        if not content:
+            return
         return content.replace('↵↵', '').replace('↵', '\n')
 
     def __formContentEN(self, content):
+        if not content:
+            return
         return content.replace('↵', '').replace('\r\n', '\n')
 
 
