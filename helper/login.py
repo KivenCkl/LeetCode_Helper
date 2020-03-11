@@ -19,7 +19,8 @@ class Login:
 
     def doLogin(self):
         resp = requests.get(LEETCODE, headers=HEADERS)
-        token = resp.cookies['csrftoken']
+        # token = resp.cookies['csrftoken']
+        token = ""
         headers = HEADERS.copy()
         headers.update({
             'referer': LOGIN,

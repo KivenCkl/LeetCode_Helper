@@ -61,7 +61,6 @@ class Problems:
                 difficulty INTEGER,
                 paid_only INTEGER,
                 is_favor INTEGER,
-                article_live INTEGER,
                 status TEXT,
                 total_acs INTEGER,
                 total_submitted INTEGER,
@@ -75,14 +74,14 @@ class Problems:
             c.execute(
                 '''
                 INSERT INTO problem (
-                    id, frontend_id, title_en, title_slug, difficulty, paid_only, is_favor, article_live, status, total_acs, total_submitted, ac_rate
+                    id, frontend_id, title_en, title_slug, difficulty, paid_only, is_favor, status, total_acs, total_submitted, ac_rate
                 )
                 VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 )
                 ''', (p.id, p.frontend_id, p.title_en, p.title_slug,
-                      p.difficulty, p.paid_only, p.is_favor, p.article_live,
-                      p.status, p.total_acs, p.total_submitted, p.ac_rate))
+                      p.difficulty, p.paid_only, p.is_favor, p.status,
+                      p.total_acs, p.total_submitted, p.ac_rate))
         conn.commit()
         conn.close()
 
@@ -175,6 +174,9 @@ class Problems:
                 headers=HEADERS,
                 cookies=self.__cookies)
             content = resp.json()
+            if "submissions_dump" not in content:
+                time.sleep(2)
+                continue
             result.extend(content['submissions_dump'])
             # 判断是否还有下一页
             if not content['has_next']:

@@ -57,7 +57,7 @@ TEMPLATE_README_CN = '''
 '''
 
 # 根目录下 README 中的题目概要信息
-TEMPLATE_README_APPEND = '|{frontend_id}|{title}{paid_only}{is_favor}{article_live}|{solutions}|{ac_rate}|{difficulty}|{tags}|\n'
+TEMPLATE_README_APPEND = '|{frontend_id}|{title}{paid_only}{is_favor}|{solutions}|{ac_rate}|{difficulty}|{tags}|\n'
 
 # 题目描述 README 英文模板
 TEMPLATE_DESC_EN = '''

@@ -17,12 +17,11 @@ class ProblemInfoNode:
         self.paid_only = self.__formPaid(json_data['paid_only'])
         self.status = json_data['status']
         self.id = json_data['stat']['question_id']
-        self.frontend_id = self.__formId(
-            json_data['stat']['frontend_question_id'])
+        # self.frontend_id = self.__formId(
+        #     json_data['stat']['frontend_question_id'])
+        self.frontend_id = json_data['stat']['frontend_question_id']
         self.title_en = json_data['stat']['question__title']
         self.title_slug = json_data['stat']['question__title_slug']
-        self.article_live = self.__formArticle(
-            json_data['stat']['question__article__live'])
         self.total_acs = json_data['stat']['total_acs']
         self.total_submitted = json_data['stat']['total_submitted']
 
