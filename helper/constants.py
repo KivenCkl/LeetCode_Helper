@@ -10,7 +10,7 @@ GRAPHQL = LEETCODE + "/graphql"
 LOGIN = LEETCODE + "/accounts/login/"
 PROBLEMS = LEETCODE + "/api/problems/all/"
 SUBMISSIONS_FORMAT = LEETCODE + "/api/submissions/?offset={}&limit=20"
-ARTICLE_FORMAT = LEETCODE + "/articles/{}/"
+CODE_FORMAT = LEETCODE + "/submissions/latest/?qid={}&lang={}"
 TAG_FORMAT = LEETCODE + "/tag/{}"
 PROBLEM_FORMAT = LEETCODE + "/problems/{}/"
 
@@ -76,7 +76,7 @@ LANGS = {
         'style': '#'
     },
     'python3': {
-        'lang': 'Python',
+        'lang': 'Python3',
         'ext': 'py',
         'style': '#'
     },

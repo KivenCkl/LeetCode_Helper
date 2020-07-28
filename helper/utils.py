@@ -28,7 +28,7 @@ async def request(url='', method='get', cookies='', headers='', **kwargs):
 # 异步调度函数
 def handle_tasks(loop, func, args):
     if isinstance(args, list):
-        tasks = [asyncio.ensure_future(func(arg)) for arg in args]
+        tasks = [asyncio.ensure_future(func(**arg)) for arg in args]
         loop.run_until_complete(asyncio.wait(tasks))
         return [task.result() for task in tasks]
     elif isinstance(args, str):

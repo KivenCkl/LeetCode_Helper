@@ -9,12 +9,13 @@ import sqlite3
 import requests
 import asyncio
 import aiohttp
+import re
 from .config import Config
 from .login import Login
 from .extractor import Extractor
 from .utils import handle_tasks
 from .node import InfoNode, ProblemInfoNode, ProblemDescNode, SubmissionNode
-from .constants import PROBLEMS, HEADERS, GRAPHQL, SUBMISSIONS_FORMAT
+from .constants import PROBLEMS, HEADERS, GRAPHQL, CODE_FORMAT
 
 
 class Problems:
@@ -126,7 +127,7 @@ class Problems:
             return
         loop = asyncio.get_event_loop()
         problems_list = handle_tasks(loop, self.__getProblemDesc,
-                                     [t[0] for t in res])
+                                     [dict(title_slug=t[0]) for t in res])
         c.execute('''
             CREATE TABLE IF NOT EXISTS description (
                 id INTEGER,
@@ -165,57 +166,120 @@ class Problems:
         conn.commit()
         conn.close()
 
-    def __getSubmissions(self):
-        result = []
-        offset = 0
-        while True:
-            resp = requests.get(
-                SUBMISSIONS_FORMAT.format(offset),
-                headers=HEADERS,
-                cookies=self.__cookies)
-            content = resp.json()
-            if "submissions_dump" not in content:
-                time.sleep(2)
-                continue
-            result.extend(content['submissions_dump'])
-            # 判断是否还有下一页
-            if not content['has_next']:
-                return result
-            offset += 20
-            time.sleep(1)
+    async def __getSubmissions(self, title_slug, offset=0, limit=500):
+        payload = {
+            'query':
+            '''
+            query submissions($offset: Int!, $limit: Int!, $lastKey: String, $questionSlug: String!) {
+                submissionList(offset: $offset, limit: $limit, lastKey: $lastKey, questionSlug: $questionSlug) {
+                    lastKey
+                    hasNext
+                    submissions {
+                        id
+                        statusDisplay
+                        lang
+                        runtime
+                        timestamp
+                        url
+                        isPending
+                        memory
+                        __typename
+                    }
+                __typename
+                }
+            }
+            ''',
+            'operationName': 'submissions',
+            'variables': {
+                'limit': limit,
+                'offset': offset,
+                'questionSlug': title_slug
+            }
+        }
+        async with aiohttp.ClientSession(cookies=self.__cookies) as session:
+            async with session.post(
+                    GRAPHQL, json=payload, headers=HEADERS) as resp:
+                return await resp.json(), title_slug
+
+    async def __getCode(self, qid, lang):
+        url = CODE_FORMAT.format(qid, lang)
+        async with aiohttp.ClientSession(cookies=self.__cookies) as session:
+            async with session.get(url, headers=HEADERS) as resp:
+                return await resp.json(), qid, lang
 
     def storeSubmissions(self):
         '''存储提交的代码信息'''
-        submissions_list = self.__getSubmissions()
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
+        c.execute("SELECT title_slug FROM problem WHERE status == 'ac'")
+        res = c.fetchall()
+        if not res:
+            return
+        loop = asyncio.get_event_loop()
+        submissions_list = handle_tasks(loop, self.__getSubmissions, [
+                                        dict(title_slug=t[0]) for t in res])
+        data = []
+        for submissions, title_slug in submissions_list:
+            dic = set()
+            for submission in submissions['data']['submissionList']['submissions']:
+                status = submission['statusDisplay']
+                key = submission['lang']
+                if status == 'Accepted' and key not in dic:
+                    data.append(submission)
+                    data[-1]['title_slug'] = title_slug
+                    dic.add(key)
         c.execute('''
             CREATE TABLE IF NOT EXISTS submission (
                 submission_id INTEGER,
-                code TEXT,
                 lang TEXT,
                 language TEXT,
                 memory TEXT,
                 runtime TEXT,
                 timestamp TEXT,
-                title_cn TEXT,
+                title_slug TEXT,
                 s_stored INTEGER DEFAULT 0,
                 PRIMARY KEY(submission_id)
             )
             ''')
-        for submission in submissions_list:
+        for submission in data:
             s = SubmissionNode(submission)
-            if s.status_display == 'Accepted':
-                c.execute(
-                    '''
-                    INSERT OR IGNORE INTO submission (
-                        submission_id, code, lang, language, memory, runtime, timestamp, title_cn
-                    )
-                    VALUES (
-                        ?, ?, ?, ?, ?, ?, ?, ?
-                    )
-                    ''', (s.submission_id, s.code, s.lang, s.language,
-                          s.memory, s.runtime, s.timestamp, s.title_cn))
+            c.execute(
+                '''
+                INSERT OR IGNORE INTO submission (
+                    submission_id, lang, language, memory, runtime, timestamp, title_slug
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?
+                )
+                ''', (s.submission_id, s.lang, s.language,
+                      s.memory, s.runtime, s.timestamp, s.title_slug))
+        conn.commit()
+        conn.close()
+
+    def storeCodes(self):
+        '''存储提交的代码'''
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute(
+            "SELECT p.id, lang FROM submission s LEFT JOIN problem p ON s.title_slug=p.title_slug")
+        res = c.fetchall()
+        if not res:
+            return
+        loop = asyncio.get_event_loop()
+        codes_list = handle_tasks(loop, self.__getCode, [
+            dict(qid=t[0], lang=t[1]) for t in res])
+        try:
+            c.execute("ALTER TABLE submission ADD COLUMN code TEXT")
+        except sqlite3.OperationalError:
+            pass
+        for code, qid, lang in codes_list:
+            c.execute(
+                """
+                UPDATE submission SET code = ?
+                WHERE title_slug=(SELECT title_slug
+                                FROM problem
+                                WHERE id=?)
+                AND lang=?""", (code.get("code", ""), qid, lang))
         conn.commit()
         conn.close()
 
@@ -236,6 +300,7 @@ class Problems:
         self.updateProblemsInfo()
         self.storeProblemsDesc()
         self.storeSubmissions()
+        self.storeCodes()
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = self.__dict_factory
         c = conn.cursor()
@@ -246,12 +311,8 @@ class Problems:
             JOIN problem p
             ON p.id=d.id
             JOIN submission s
-            ON d.title_cn=s.title_cn
-            WHERE (d.d_stored=0 OR s.s_stored=0) AND s.submission_id IN (
-                SELECT MAX(submission_id)
-                FROM submission
-                GROUP BY title_cn, language
-            )
+            ON p.title_slug=s.title_slug
+            WHERE (d.d_stored=0 OR s.s_stored=0)
             ORDER BY p.id DESC
             ''')
         datas = c.fetchall()
@@ -260,18 +321,14 @@ class Problems:
             self.updateProblemsDesc()
             extractor.extractCode(datas)
             self.updateSubmissions()
+            self.storeCodes()
         c.execute('''
             SELECT *
             FROM description d
             JOIN problem p
             ON p.id=d.id
             JOIN submission s
-            ON d.title_cn=s.title_cn
-            WHERE s.submission_id IN (
-                SELECT MAX(submission_id)
-                FROM submission
-                GROUP BY title_cn, language
-            )
+            ON p.title_slug=s.title_slug
             ORDER BY p.id DESC
             ''')
         datas = c.fetchall()
