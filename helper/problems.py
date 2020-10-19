@@ -4,12 +4,10 @@
 @LastEditTime: 2019-05-23
 '''
 import os
-import time
 import sqlite3
 import requests
 import asyncio
 import aiohttp
-import re
 from .config import Config
 from .login import Login
 from .extractor import Extractor
@@ -20,7 +18,6 @@ from .constants import PROBLEMS, HEADERS, GRAPHQL, CODE_FORMAT
 
 class Problems:
     '''核心逻辑'''
-
     def __init__(self):
         self.config = Config()
         self.login = Login(self.config.username, self.config.password)
@@ -88,8 +85,7 @@ class Problems:
 
     async def __getProblemDesc(self, title_slug):
         payload = {
-            'query':
-            '''
+            'query': '''
             query questionData($titleSlug: String!) {
                 question(titleSlug: $titleSlug) {
                     questionId
@@ -106,18 +102,17 @@ class Problems:
                 }
             }
             ''',
-            'operationName':
-            'questionData',
+            'operationName': 'questionData',
             'variables': {
                 'titleSlug': title_slug
             }
         }
         async with aiohttp.ClientSession(cookies=self.__cookies) as session:
-            async with session.post(
-                    GRAPHQL, json=payload, headers=HEADERS) as resp:
+            async with session.post(GRAPHQL, json=payload,
+                                    headers=HEADERS) as resp:
                 return await resp.json()
 
-    def storeProblemsDesc(self):
+    async def storeProblemsDesc(self):
         '''存储 AC 问题描述信息'''
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
@@ -126,8 +121,8 @@ class Problems:
         if not res:
             return
         loop = asyncio.get_event_loop()
-        problems_list = handle_tasks(loop, self.__getProblemDesc,
-                                     [dict(title_slug=t[0]) for t in res])
+        problems_list = await handle_tasks(
+            loop, self.__getProblemDesc, [dict(title_slug=t[0]) for t in res])
         c.execute('''
             CREATE TABLE IF NOT EXISTS description (
                 id INTEGER,
@@ -168,8 +163,7 @@ class Problems:
 
     async def __getSubmissions(self, title_slug, offset=0, limit=500):
         payload = {
-            'query':
-            '''
+            'query': '''
             query submissions($offset: Int!, $limit: Int!, $lastKey: String, $questionSlug: String!) {
                 submissionList(offset: $offset, limit: $limit, lastKey: $lastKey, questionSlug: $questionSlug) {
                     lastKey
@@ -197,8 +191,8 @@ class Problems:
             }
         }
         async with aiohttp.ClientSession(cookies=self.__cookies) as session:
-            async with session.post(
-                    GRAPHQL, json=payload, headers=HEADERS) as resp:
+            async with session.post(GRAPHQL, json=payload,
+                                    headers=HEADERS) as resp:
                 return await resp.json(), title_slug
 
     async def __getCode(self, qid, lang):
@@ -207,7 +201,7 @@ class Problems:
             async with session.get(url, headers=HEADERS) as resp:
                 return await resp.json(), qid, lang
 
-    def storeSubmissions(self):
+    async def storeSubmissions(self):
         '''存储提交的代码信息'''
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
@@ -216,12 +210,13 @@ class Problems:
         if not res:
             return
         loop = asyncio.get_event_loop()
-        submissions_list = handle_tasks(loop, self.__getSubmissions, [
-                                        dict(title_slug=t[0]) for t in res])
+        submissions_list = await handle_tasks(
+            loop, self.__getSubmissions, [dict(title_slug=t[0]) for t in res])
         data = []
         for submissions, title_slug in submissions_list:
             dic = set()
-            for submission in submissions['data']['submissionList']['submissions']:
+            for submission in submissions['data']['submissionList'][
+                    'submissions']:
                 status = submission['statusDisplay']
                 key = submission['lang']
                 if status == 'Accepted' and key not in dic:
@@ -251,23 +246,24 @@ class Problems:
                 VALUES (
                     ?, ?, ?, ?, ?, ?, ?
                 )
-                ''', (s.submission_id, s.lang, s.language,
-                      s.memory, s.runtime, s.timestamp, s.title_slug))
+                ''', (s.submission_id, s.lang, s.language, s.memory, s.runtime,
+                      s.timestamp, s.title_slug))
         conn.commit()
         conn.close()
 
-    def storeCodes(self):
+    async def storeCodes(self):
         '''存储提交的代码'''
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
         c.execute(
-            "SELECT p.id, lang FROM submission s LEFT JOIN problem p ON s.title_slug=p.title_slug")
+            "SELECT p.id, lang FROM submission s LEFT JOIN problem p ON s.title_slug=p.title_slug"
+        )
         res = c.fetchall()
         if not res:
             return
         loop = asyncio.get_event_loop()
-        codes_list = handle_tasks(loop, self.__getCode, [
-            dict(qid=t[0], lang=t[1]) for t in res])
+        codes_list = await handle_tasks(
+            loop, self.__getCode, [dict(qid=t[0], lang=t[1]) for t in res])
         try:
             c.execute("ALTER TABLE submission ADD COLUMN code TEXT")
         except sqlite3.OperationalError:
@@ -291,16 +287,16 @@ class Problems:
         conn.commit()
         conn.close()
 
-    def update(self):
+    async def update(self):
         '''增量式更新数据'''
         output_dir = self.config.outputDir
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         extractor = Extractor(output_dir, self.config.username)
         self.updateProblemsInfo()
-        self.storeProblemsDesc()
-        self.storeSubmissions()
-        self.storeCodes()
+        await self.storeProblemsDesc()
+        await self.storeSubmissions()
+        await self.storeCodes()
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = self.__dict_factory
         c = conn.cursor()
@@ -321,7 +317,7 @@ class Problems:
             self.updateProblemsDesc()
             extractor.extractCode(datas)
             self.updateSubmissions()
-            self.storeCodes()
+            await self.storeCodes()
         c.execute('''
             SELECT *
             FROM description d
