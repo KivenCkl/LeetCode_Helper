@@ -51,9 +51,11 @@ Python 实现的 LeetCode 仓库美化程序。爬取 LeetCode-cn AC 的题目�
 {
     "username": "leetcode-cn@leetcode",
     "password": "leetcode",
-    "outputDir": "../LeetCode"
+    "outputDir": "../LeetCode",
+    "timeInterval": 0.1
 }
 ```
 
 - `username` 和 `password` 对应你的 LeetCode-cn 账号和密码
 - `outputDir` 对应你希望存放源码文件的目录
+- `timeInterval` 为访问 LeetCode-cn 的时间间隔，默认为 0.1s

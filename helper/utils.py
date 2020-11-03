@@ -6,7 +6,9 @@
 import asyncio
 import aiohttp
 import os
+import time
 from functools import partial
+from .config import config
 
 
 def mkdir(path):
@@ -40,7 +42,8 @@ async def handle_tasks(loop, func, args):
         res = []
         while pending:
             finished, pending = await asyncio.wait(
-                pending, return_when=asyncio.FIRST_EXCEPTION)
+                pending, return_when=asyncio.FIRST_COMPLETED)
+            time.sleep(config.timeInterval)
             for task in finished:
                 if task.exception():
                     coro = tasks[task]

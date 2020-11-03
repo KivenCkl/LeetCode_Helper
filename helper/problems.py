@@ -8,7 +8,7 @@ import sqlite3
 import requests
 import asyncio
 import aiohttp
-from .config import Config
+from .config import config
 from .login import Login
 from .extractor import Extractor
 from .utils import handle_tasks
@@ -19,8 +19,7 @@ from .constants import PROBLEMS, HEADERS, GRAPHQL, CODE_FORMAT
 class Problems:
     '''核心逻辑'''
     def __init__(self):
-        self.config = Config()
-        self.login = Login(self.config.username, self.config.password)
+        self.login = Login(config.username, config.password)
         self.__db_dir = os.path.abspath(os.path.join(__file__, "../..", "db"))
         if not os.path.exists(self.__db_dir):
             os.makedirs(self.__db_dir)
@@ -289,10 +288,10 @@ class Problems:
 
     async def update(self):
         '''增量式更新数据'''
-        output_dir = self.config.outputDir
+        output_dir = config.outputDir
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        extractor = Extractor(output_dir, self.config.username)
+        extractor = Extractor(output_dir, config.username)
         self.updateProblemsInfo()
         await self.storeProblemsDesc()
         await self.storeSubmissions()
@@ -332,7 +331,7 @@ class Problems:
         print('数据已更新！')
         conn.close()
 
-    def rebuild(self):
+    def clearDB(self):
         '''重建数据'''
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
@@ -362,4 +361,3 @@ class Problems:
             c.execute('DROP TABLE submission')
         conn.commit()
         conn.close()
-        self.update()

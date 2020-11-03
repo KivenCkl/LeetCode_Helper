@@ -23,4 +23,5 @@ class Main:
     def rebuild(self):
         '''重建数据'''
         self.__info()
-        self.problems.rebuild()
+        self.problems.clearDB()
+        self.update()
